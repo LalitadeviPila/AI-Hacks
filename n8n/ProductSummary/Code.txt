@@ -1,0 +1,110 @@
+Code:
+
+const cleanedData = $input.all().map(item => {
+  const record = item.json;
+
+  return {
+    id: record.ProductID,
+    cost: record.Price,
+    category: record.Category,
+    name: record.ProductName,
+    brand: record.Brand,
+    sku: record.Material,
+    weight: record.Weight,
+    dimentions: record.Dimensions
+  };
+});
+
+// ✅ Return a single item with the array inside `records`
+return [
+  {
+    json: {
+      records: cleanedData
+    }
+  }
+];
+  
+
+---------------
+
+AI instructions:
+
+PROMPT
+You are a meticulous product data analyst. Please analyze this exact product catalog data and create a structured, data-driven report with deeper insights.
+The dataset contains 120 products**.
+Here is the detailed product dataset: 
+
+
+{{ $json.records.map((item, index) => `${index + 1}. ${item.name}
+- Category: ${item.Category}
+- Brand: ${item.Brand}
+- SKU: ${item.Material}
+- Cost: $${item.Price}`).join('\n\n')
+}}
+
+---
+
+PROMPT
+You are a meticulous product data analyst. Please analyze this exact product catalog data and create a structured, data-driven report with deeper insights.
+The dataset contains 120 products**.
+Here is the detailed product dataset: 
+
+
+{{ $json.records.map((item, index) => `${index + 1}. ${item.name}
+- Category: ${item.category}
+- Brand: ${item.brand}
+- SKU: ${item.sku}
+- Cost: $${item.price}`).join('\n\n')
+}}
+
+---
+
+###Please use this exact structure for your response:
+1. **Executive Summary**
+- Provide 2–3 high-level findings about pricing or trends.
+- Mention any interesting overall pattern in the dataset.
+
+
+2. **Top Brands**
+- List top 3 brands by number of products
+- Provide counts for each
+
+3. **Pricing by Category**
+- Category with highest average price
+- Category with lowest average  rice
+- Profit by Brand
+
+4.**Outlier Products**
+- Identify 3 products with very high Price
+- Identify 3 products with very low or low price
+
+
+Use **bullet points or tables where appropriate.
+Ensure insights are easy to follow. **Store the entire dataset in memory** for follow-up queries.
+
+
+-----------
+
+Format Email Prompt
+
+You are an AI report formatter. Convert the following plain-text report into a professionally formatted HTML email.
+
+Requirements:
+- Start with: "Hello <br><br>Good morning! Hope you had an amazing weekend.<br>Sharing the weekly report for the last whole week."
+- Use <h2> or <h3> for section headers.
+- Use <strong> for key labels and values.
+- Use <p> for paragraphs and <ul>/<ol> for lists where appropriate.
+- Use tables (<table>, <tr>, <th>, <td>) for structured data like brand counts or metrics.
+- Highlight important metrics using <blockquote> or <div> with subtle styling.
+- At the end, include this signature:
+
+  <br><br>Thanks,<br>Regards,<br><strong>ProductSummaryBot</strong><br>Manager<br>UnlockYouPotential
+
+- End with this note, in bold:
+
+  <br><br><strong>Note:</strong> Also just mention this report is generated for demo purposes via Automated workflow on n8n Low/ No Code Tool.
+
+Do not include ```html or triple backticks anywhere. The output should be a valid HTML snippet that can be pasted into an n8n email node.
+
+Here is the content to format:
+{{ $json.output }}
