@@ -1,0 +1,285 @@
+{
+  "name": "FlightStatusV2",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "airline_name",
+              "type": "any"
+            },
+            {
+              "name": "flight_date",
+              "type": "any"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -384,
+        -16
+      ],
+      "id": "d361bad5-1a49-425d-b38b-0f2913e56d3a",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "22bd0b7d-4616-4a40-ae33-80a84dc5ae23",
+              "name": "airline_name",
+              "value": "={{ $json.airline_name }}",
+              "type": "string"
+            },
+            {
+              "id": "99907e28-c202-4d4b-a49d-7e1fe39f0633",
+              "name": "flight_date",
+              "value": "={{ $json.flight_date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        -16
+      ],
+      "id": "07af1afa-c9cd-45ec-865f-28728176342a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.aviationstack.com/v1/flights",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_key",
+              "value": "05628a0f2e1afd857376b5e001a209eb"
+            },
+            {
+              "name": "flight_date",
+              "value": "={{ $json.flight_date }}"
+            },
+            {
+              "name": "airline_name",
+              "value": "={{ $json.airline_name }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        32,
+        -16
+      ],
+      "id": "b2f17426-2a8c-4455-948e-fadd24209650",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "chatId": "1096671384",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        -16
+      ],
+      "id": "2985ea02-f755-445e-bfe7-f4a6c0e78115",
+      "name": "Send a text message",
+      "webhookId": "a9069105-797f-4b33-9252-94072f2b4c9a",
+      "credentials": {
+        "telegramApi": {
+          "id": "6fGoPY02TvyUb8IL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fd99507c-f946-4269-afbd-4b85a72b8431",
+              "name": "response",
+              "value": "={{ $json.result.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        -16
+      ],
+      "id": "e2163861-988f-4036-b883-29232a4e9577",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=PROMPT\nYou are a meticulous Flight analyst. Please analyze this exact flight details.\nHere is the detailed flights dataset: \n\n\n{{ $json.data.map((item, index) => `${index + 1}. Flight Details\n- Flight_Date: ${item.flight_date}\n- Flight_Status: ${item.flight_status}\n- Departure_Airport: ${item.departure?.airport || \"Unknown\"}\n- Arrival_Airport: ${item.arrival?.airport || \"Unknown\"}\n- Airline_Name: ${item.airline?.name || \"Unknown\"}\n- Flight_Number: ${item.flight?.number || \"Unknown\"}`).join('\\n\\n')\n\n}}\n\n---\n\n###Please use this exact structure for your response:\n1. **Flight Status**\n- Provide where flight is exactly now\n\n2. **Delays**\n- List Delays in case of any\n\n\nUse **bullet points or tables where appropriate.\nEnsure insights are easy to follow. **Store the entire dataset in memory** for follow-up queries.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        240,
+        -16
+      ],
+      "id": "345001e9-15b5-4771-ba63-de040ba983c9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        112,
+        192
+      ],
+      "id": "b7e3bc8b-a7ff-4bd1-b1f7-438e92e31bbf",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "E6WIeKvjEv2Mw0cn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessionKey"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        192
+      ],
+      "id": "0954714a-e019-4c8b-87a7-2e8ca0598d17",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "80530922-9993-4566-9a45-57713ace4eeb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f78a8dabb88fda04965214e50531d71dd8df55eb877409d18fe5519d28063763"
+  },
+  "id": "a2HEETzwX1I85vm3",
+  "tags": []
+}
