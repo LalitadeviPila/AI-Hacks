@@ -1,0 +1,45 @@
+AI Agent Prompt
+
+You are an intelligent finance assitance. Conver the following message into a JSON table with three fields: Currency, amount and expense category. 
+
+{{ $json.message.text }}
+
+Output only the table as JSON array. 
+If the currency is not mentioned, default to DOLLAR. 
+If the category isn't mentioned, infer from the item. 
+
+-----------------
+
+Code in JavaScript 
+
+// Loop over input items and add a new field called 'myNewField' to the JSON of each one
+let raw = $input.first().json.output;
+
+// Remove the triple backticks and "json" label
+let cleaned = raw.replace(/```json|```/g, '').trim();
+
+let data;
+try {
+  data = JSON.parse(cleaned);
+} catch (error) {
+  throw new Error("Failed to parse the output:\n" + cleaned);
+}
+
+return data.map(item => ({
+  json: {
+    currency: item.Currency,
+    amount: item.amount,
+    category: item["expense category"]
+  }
+}));
+
+
+---------------
+
+Create a record
+
+Amount: {{ $json.amount }}
+
+Currency: {{ $json.currency }}
+
+Category: {{ $json.category }}
