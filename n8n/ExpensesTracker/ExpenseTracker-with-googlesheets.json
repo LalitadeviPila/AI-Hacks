@@ -1,0 +1,241 @@
+{
+  "name": "ExpenseTracker-with-googlesheets",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "*"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        -96
+      ],
+      "id": "b7e6d742-0312-4569-9286-ab73b5a43381",
+      "name": "Telegram Trigger",
+      "webhookId": "cb7aebe0-1c95-41c9-bc0d-6d657599c757",
+      "credentials": {
+        "telegramApi": {
+          "id": "6fGoPY02TvyUb8IL",
+          "name": "Telegram Finance Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent finance assitance. Conver the following message into a JSON table with three fields: Currency, amount and expense category. \n\n{{ $json.message.text }}\n\nOutput only the table as JSON array. \nIf the currency is not mentioned, default to DOLLAR. \nIf the category isn't mentioned, infer from the item. ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -528,
+        -96
+      ],
+      "id": "a354bcb5-bcda-4fb9-b1a0-7a97c46833b5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        112
+      ],
+      "id": "44fda68a-cff7-4dde-8b07-0cad1ac46d0d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "E6WIeKvjEv2Mw0cn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessionKey"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        112
+      ],
+      "id": "67a00daf-56d2-4a3e-92b5-2809a21d9692",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nlet raw = $input.first().json.output;\n\n// Remove the triple backticks and \"json\" label\nlet cleaned = raw.replace(/```json|```/g, '').trim();\n\nlet data;\ntry {\n  data = JSON.parse(cleaned);\n} catch (error) {\n  throw new Error(\"Failed to parse the output:\\n\" + cleaned);\n}\n\nreturn data.map(item => ({\n  json: {\n    currency: item.Currency,\n    amount: item.amount,\n    category: item[\"expense category\"]\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        -96
+      ],
+      "id": "cd70cde4-a6b9-4efd-a28d-b41ab410f206",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1K2VYFktl0QJ7VO-J2M_6V7EvUgCEbJlLPyMmsJW5g5o",
+          "mode": "list",
+          "cachedResultName": "FinanceTracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K2VYFktl0QJ7VO-J2M_6V7EvUgCEbJlLPyMmsJW5g5o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K2VYFktl0QJ7VO-J2M_6V7EvUgCEbJlLPyMmsJW5g5o/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Amount": "={{ $json.amount }}",
+            "Currency": "={{ $json.currency }}",
+            "Category": "={{ $json.category }}"
+          },
+          "matchingColumns": [
+            "Amount"
+          ],
+          "schema": [
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        32,
+        -96
+      ],
+      "id": "0d7a1b51-ba53-4171-a69d-d6928ab06ba8",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "55IafTFgj2pg4pjN",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b2802f97-43a0-4319-9ba1-eb2424a71491",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f78a8dabb88fda04965214e50531d71dd8df55eb877409d18fe5519d28063763"
+  },
+  "id": "oepfxMOnvJyJHIZE",
+  "tags": []
+}
