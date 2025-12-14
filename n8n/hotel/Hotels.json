@@ -1,0 +1,259 @@
+{
+  "name": "Hotels",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -416,
+        -16
+      ],
+      "id": "6ebccb3b-3ab7-4347-ba6d-6157b05d7dfb",
+      "name": "When chat message received",
+      "webhookId": "ff00444a-98cd-43f7-998c-5df9a8620f0d"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2a1dfa52-d4b1-437a-b9e0-ccdf52ed4a56",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        -16
+      ],
+      "id": "5a893164-849e-445f-ac78-c37b74c3b758",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "serpApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "=NearestHotels,{{ $json.chatInput }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "0c42be50-ad1b-42d7-a441-58c37c99450a",
+      "name": "HTTP Request",
+      "credentials": {
+        "serpApi": {
+          "id": "VJQXbw3EbcP0WYha",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(hotels => ({\n  hotels: hotels.json.shopping_results.map(hotel => ({\n    price: hotel.price,\n    rating: hotel.rating,\n    title: hotel.title\n  }))\n}));\n\n// const out = [];\n\n// for (const item of $input.all()) {\n//   for (const hotel of item.json.shopping_results) {\n//     out.push({\n//       json: {\n//         title: hotel.title,\n//         price: hotel.price,\n//         rating: hotel.rating\n//       }\n//     });\n//   }\n// }\n\n// return out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -16
+      ],
+      "id": "6067c150-7700-40c6-b55b-9e51d8e1ddfb",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a meticulous Hotel Analyst. Analyze the following hotel dataset carefully.\n\nHere is the detailed hotel dataset:\n\n{{  \n  $json.hotels\n    .map((item, index) =>\n      `${index + 1}. Hotel Details\n- Title: ${item.title}\n- Price: ${item.price}\n- Rating: ${item.rating}`\n    )\n    .join('\\n\\n')\n}}\n\n---\n\n### ✅ REQUIRED OUTPUT STRUCTURE\n\n1. **Best Available Hotel**\n   - First, convert all prices to numeric values (strip \"$\").\n   - Compare all hotels by:\n     - Highest rating first\n     - If ratings are similar, choose the lowest price\n   - Select **only ONE** best hotel.\n   - Provide:\n     - Hotel Name\n     - Price\n     - Rating\n     - Why it is the best choice\n\n⚠️ Do NOT list all hotels again.  \n⚠️ Only output the single best hotel after comparison.\n\nStore the dataset in memory for follow-up queries.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "63fd886e-411f-4bb1-be22-f9e4d73dba57",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        144
+      ],
+      "id": "a9fb56d0-2fd4-4591-980f-6f8a5a6e579e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "wcWtKVvuGguI8T5w",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        144
+      ],
+      "id": "7b74a1d6-3992-40b2-b693-62a498e59fc4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "sendTo": "reachlalitp@gmail.com",
+        "subject": "Best Hotels",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        -16
+      ],
+      "id": "68067e27-4bf8-414e-8b86-d804524a6310",
+      "name": "Send a message",
+      "webhookId": "d739a3fb-71ea-4c95-a2a6-b53f6d3382c3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LH6lB1zoS82mtQ1O",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3d01e344-6abe-4f22-a0d8-077a36cc8179",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b0416204ec2ebd5ef0773e125da640a415d4595315aa7499cff484e41689ba4"
+  },
+  "id": "96Zayk89PMxFOXOO",
+  "tags": []
+}
