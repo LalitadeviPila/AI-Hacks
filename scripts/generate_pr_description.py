@@ -3,7 +3,7 @@ from github import Github
 from openai import OpenAI
 
 # Get environment variables
-github_token = os.environ.get("GITHUB_TOKEN")
+github_token = os.environ.get("PR_TOKEN")
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 repo_name = os.environ.get("GITHUB_REPOSITORY")
 pr_number = os.environ.get("GITHUB_EVENT_PULL_REQUEST_NUMBER")
