@@ -25,4 +25,4 @@ jobs:
       run: python scripts/generate_pr_description.py
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        GITHUB_TOKEN: ${{ secrets.PR_TOKEN }} # Use the default token
+        PR_TOKEN: ${{ secrets.PR_TOKEN }} # Use the default token
