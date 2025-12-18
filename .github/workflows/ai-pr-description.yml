@@ -26,3 +26,4 @@ jobs:
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         PR_TOKEN: ${{ secrets.PR_TOKEN }} # Use the default token
+        PR_NUMBER: ${{ github.event.pull_request.number }}
