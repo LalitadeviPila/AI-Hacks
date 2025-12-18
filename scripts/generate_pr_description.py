@@ -6,7 +6,7 @@ from openai import OpenAI
 github_token = os.environ.get("PR_TOKEN")
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 repo_name = os.environ.get("GITHUB_REPOSITORY")
-pr_number = os.environ.get("GITHUB_EVENT_PULL_REQUEST_NUMBER")
+pr_number = os.environ.get("PR_NUMBER")
 
 if not github_token:
     print("Missing github token environment variables.")
