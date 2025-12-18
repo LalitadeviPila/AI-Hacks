@@ -8,8 +8,14 @@ openai_api_key = os.environ.get("OPENAI_API_KEY")
 repo_name = os.environ.get("GITHUB_REPOSITORY")
 pr_number = os.environ.get("GITHUB_EVENT_PULL_REQUEST_NUMBER")
 
-if not github_token or not openai_api_key or not pr_number:
-    print("Missing required environment variables.")
+if not github_token:
+    print("Missing github token environment variables.")
+    exit(1)
+if not openai_api_key:
+    print("Missing openai_api_key.")
+    exit(1)
+if not pr_number:
+    print("Missing pr number.")
     exit(1)
 
 # Initialize GitHub and OpenAI clients
