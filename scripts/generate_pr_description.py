@@ -1,8 +1,9 @@
+
 import os
 from github import Github
 from openai import OpenAI
 
-# Get environment variables
+# --- Environment variables ---
 github_token = os.environ.get("PR_TOKEN")
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 repo_name = os.environ.get("GITHUB_REPOSITORY")
@@ -18,42 +19,107 @@ if not pr_number:
     print("Missing pr number.")
     exit(1)
 
-# Initialize GitHub and OpenAI clients
+# --- Clients ---
 g = Github(github_token)
 repo = g.get_repo(repo_name)
 pr = repo.get_pull(int(pr_number))
 client = OpenAI(api_key=openai_api_key)
 
-# Extract info for the AI prompt (e.g., title, commit messages)
-commit_messages = "\n".join([commit.commit.message for commit in pr.get_commits()])
-# You could also fetch the diff if needed, but commit messages are a good start.
+# --- Build a unified diff payload from PR changes ---
+# PyGithub's `get_files()` returns per-file patches (unified diff format).
+files = list(pr.get_files())
 
+def build_diff_snippet(files, max_chars=20000):
+    """
+    Construct a unified diff-style snippet across all changed files.
+    Trim to max_chars to keep prompt size safe.
+    """
+    parts = []
+    for f in files:
+        # f.patch can be None on very large files or certain changes (binary/too big)
+        # Use filename + summary even when patch is missing.
+        header = f"--- a/{f.filename}\n+++ b/{f.filename}\n"
+        summary = f"# changes: additions={f.additions} deletions={f.deletions} status={f.status}\n"
+        patch = f.patch or ""
+        block = header + summary + patch + "\n"
+        parts.append(block)
+
+    combined = "\n".join(parts)
+    if len(combined) > max_chars:
+        # Hard truncate from the end (keeps file headers); you can improve with chunking if needed
+        combined = combined[:max_chars] + "\n# [diff truncated]\n"
+    return combined
+
+diff_snippet = build_diff_snippet(files)
+
+# --- Additional context from PR metadata (optional but helpful) ---
+pr_title = pr.title or ""
+pr_branch = pr.head.ref
+base_branch = pr.base.ref
+labels = ", ".join([l.name for l in pr.get_labels()]) if pr.get_labels() else ""
+linked_issues = []
+# Attempt to pull linked issues via PR body keywords (fallback if you don't use GH linking):
+if pr.body:
+    # naive extraction for "#123", "JIRA-123", etc. (keep simple)
+    import re
+    linked_issues = re.findall(r"(#\d+|[A-Z]{2,}-\d+)", pr.body)
+linked_issues_text = ", ".join(linked_issues)
+
+# --- Prompt that uses DIFF, not commit messages ---
 prompt = f"""
-You are an expert software engineer and technical writer. 
-Please write a concise and informative pull request description based on the following commit messages:
-{commit_messages}
+You are an expert software engineer and technical writer.
 
-Ensure the description includes:
-*   Purpose: The main goal of the changes.
-*   Changes: A summary of modifications.
-*   Impact: Any potential effects.
-*   Testing: How to test the changes.
+Write a concise and informative pull request description based on the DIFF below.
+Prioritize what changed and why, not just the code lines. Use clear, scannable bullets.
+
+PR Context:
+- Title: {pr_title}
+- Branch: {pr_branch} → Base: {base_branch}
+- Labels: {labels or "none"}
+- Linked issues: {linked_issues_text or "none"}
+
+Unified Diff (truncated if too long):
+{diff_snippet}
+
+Please produce a description with the following sections:
+
+* Purpose
+  - What problem does this change solve? Why now?
+
+* Changes
+  - Summarize key code changes (modules, functions, endpoints, configs).
+  - Highlight breaking changes, public API or schema changes if any.
+
+* Impact
+  - Risk areas, performance, security, infra implications (e.g., AWS, CI/CD, feature flags).
+  - Migrations or rollout considerations.
+
+* Testing
+  - How to test locally and in CI.
+  - Include steps, commands, or sample payloads.
+  - Mention where developers can add local testing screenshots if needed.
+
+Keep it short and precise. Use bullet points, avoid long paragraphs.
 """
 
-# Generate description using the AI model
+# --- Call OpenAI (chat-completions for compatibility with your code) ---
 try:
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo", # Or another suitable model
-        messages=[{"role": "user", "content": prompt}]
+        model="gpt-4o-mini",  # Prefer a modern lightweight model. Use "gpt-4.1" for highest quality.
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
     )
     ai_description = response.choices[0].message.content.strip()
 except Exception as e:
     print(f"AI API call failed: {e}")
     ai_description = "AI description generation failed."
 
-# Update the PR description
+# --- Update PR body safely ---
 try:
-    pr.edit(body=pr.body + "\n\n---\n**AI Generated Description:**\n" + ai_description)
-    print("Successfully updated PR description with AI content.")
+    existing = pr.body or ""
+    divider = "\n\n---\n**AI Generated Description (diff-based):**\n"
+    pr.edit(body=existing + divider + ai_description)
+    print("Successfully updated PR description with AI content (diff-based).")
 except Exception as e:
     print(f"Failed to update PR description: {e}")
+``
