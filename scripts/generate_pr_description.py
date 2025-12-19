@@ -262,3 +262,5 @@ try:
     pr.edit(body=existing + divider + ai_description)
     print("Successfully updated PR description.")
 except Exception as e:
+    print(f"Failed to update PR description: {e}")
+    
