@@ -1,4 +1,4 @@
-name: Generate PR Code Review By AI Agent
+name: Generate PR Description and Code Review By Lalita AI Agent
 
 on:
   pull_request:
