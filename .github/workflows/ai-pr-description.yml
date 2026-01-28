@@ -1,0 +1,29 @@
+# name: Generate PR Description AI
+
+# on:
+#   pull_request:
+#     types: [opened, labeled] # Triggers on PR open or label event
+
+# jobs:
+#   generate-pr-description:
+#     runs-on: ubuntu-latest
+#     # Add a condition if you want it to run only on a specific trigger, e.g., a label
+#     # if: github.event.label.name == 'ai-description' 
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+
+#     - name: Set up Python
+#       uses: actions/setup-python@v5
+#       with:
+#         python-version: '3.x'
+
+#     - name: Install dependencies
+#       run: pip install openai PyGithub # Install necessary Python libraries
+
+#     - name: Generate and Update PR Description
+#       run: python scripts/generate_pr_description.py
+#       env:
+#         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#         PR_TOKEN: ${{ secrets.PR_TOKEN }} # Use the default token
+#         PR_NUMBER: ${{ github.event.pull_request.number }}

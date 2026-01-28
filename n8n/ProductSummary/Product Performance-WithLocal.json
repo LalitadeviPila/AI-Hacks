@@ -1,0 +1,272 @@
+{
+  "name": "Product Performance-WithLocal",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app4aPIG3Bbg9YCUU",
+          "mode": "list",
+          "cachedResultName": "product_price_dataset.csv",
+          "cachedResultUrl": "https://airtable.com/app4aPIG3Bbg9YCUU"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblGjX9dnV26aUEmB",
+          "mode": "list",
+          "cachedResultName": "Product master",
+          "cachedResultUrl": "https://airtable.com/app4aPIG3Bbg9YCUU/tblGjX9dnV26aUEmB"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        208
+      ],
+      "id": "13a34cb9-3a54-4bd4-b4fc-b91fe62434e7",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "U0iVbSHPATnZPx2e",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cleanedData = $input.all().map(item => {\n  const record = item.json;\n\n  return {\n    id: record.ProductID,\n    price: record.Price,\n    category: record.Category,\n    name: record.ProductName,\n    brand: record.Brand,\n    sku: record.Material,\n    weight: record.Weight,\n    dimentions: record.Dimensions\n  };\n});\n\n// ✅ Return a single item with the array inside `records`\nreturn [\n  {\n    json: {\n      records: cleanedData\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        208
+      ],
+      "id": "b7c620b8-3157-4bd4-935a-1b87721c91cd",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=PROMPT\nYou are a meticulous product data analyst. Please analyze this exact product catalog data and create a structured, data-driven report with deeper insights.\nThe dataset contains 120 products**.\nHere is the detailed product dataset: \n\n\n{{ $json.records.map((item, index) => `${index + 1}. ${item.name}\n- Category: ${item.category}\n- Brand: ${item.brand}\n- SKU: ${item.sku}\n- Cost: $${item.price}`).join('\\n\\n')\n}}\n\n---\n\n###Please use this exact structure for your response:\n1. **Executive Summary**\n- Provide 2–3 high-level findings about pricing or trends.\n- Mention any interesting overall pattern in the dataset.\n\n\n2. **Top Brands**\n- List top 3 brands by number of products\n- Provide counts for each\n\n3. **Pricing by Category**\n- Category with highest average price\n- Category with lowest average  rice\n- Profit by Brand\n\n4.**Outlier Products**\n- Identify 3 products with very high Price\n- Identify 3 products with very low or low price\n\n\nUse **bullet points or tables where appropriate.\nEnsure insights are easy to follow. **Store the entire dataset in memory** for follow-up queries.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        208
+      ],
+      "id": "579c0e1d-7f76-4727-b4b1-0e5b0e1411b6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        384
+      ],
+      "id": "f1dc8cd9-ec90-41f3-8648-499b16a5ab4c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "E6WIeKvjEv2Mw0cn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessionkey"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        416
+      ],
+      "id": "b396c90c-8350-49dc-9928-c52d22e0d1f3",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI report formatter. Convert the following plain-text report into a professionally formatted HTML email.\n\nRequirements:\n- Start with: \"Hello <br><br>Good morning! Hope you had an amazing weekend.<br>Sharing the weekly report for the last whole week.\"\n- Use <h2> or <h3> for section headers.\n- Use <strong> for key labels and values.\n- Use <p> for paragraphs and <ul>/<ol> for lists where appropriate.\n- Use tables (<table>, <tr>, <th>, <td>) for structured data like brand counts or metrics.\n- Highlight important metrics using <blockquote> or <div> with subtle styling.\n- At the end, include this signature:\n\n  <br><br>Thanks,<br>Regards,<br><strong>ProductSummaryBot</strong><br>Manager<br>UnlockYouPotential\n\n- End with this note, in bold:\n\n  <br><br><strong>Note:</strong> Also just mention this report is generated for demo purposes via Automated workflow on n8n Low/ No Code Tool.\n\nDo not include ```html or triple backticks anywhere. The output should be a valid HTML snippet that can be pasted into an n8n email node.\n\nHere is the content to format:\n{{ $json.output }}\n\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        896,
+        208
+      ],
+      "id": "c58aa5a2-81ae-47d4-943d-d5023701fc2d",
+      "name": "Format Email",
+      "credentials": {
+        "openAiApi": {
+          "id": "E6WIeKvjEv2Mw0cn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "xxxx.p@gmail.com",
+        "subject": "Weekly Product Summary Report",
+        "message": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        208
+      ],
+      "id": "10692da6-06a1-438e-949c-765d3454c3a7",
+      "name": "Send a message",
+      "webhookId": "ec04aafb-79d1-42a4-832b-48f40cc1eeab",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LHotwzbWo9ssnL1L",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        208
+      ],
+      "id": "07059a20-2217-4efd-827a-466cd4628764",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fec3b330-3760-42fa-b88a-7146c2ccd603",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f78a8dabb88fda04965214e50531d71dd8df55eb877409d18fe5519d28063763"
+  },
+  "id": "wcKucUi8G6N6lQWo",
+  "tags": []
+}

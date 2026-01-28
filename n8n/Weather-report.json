@@ -1,0 +1,147 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        -112
+      ],
+      "id": "3ee1813d-87c2-47a2-98e7-7d6bb427b242",
+      "name": "When chat message received",
+      "webhookId": "baea5ac8-d5c9-441d-8e36-97a58ca7bfdc"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.chatInput }}"
+            }
+          ]
+        },
+        "jsonOutput": "",
+        "options": {
+          "frequency_penalty": 0,
+          "maxTokens": 16
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -176,
+        -112
+      ],
+      "id": "284df73c-e783-4638-ac55-17a928330af6",
+      "name": "Message a model",
+      "alwaysOutputData": true,
+      "notesInFlow": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "XfDnwLRY5oTcY1Wm",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "xxxx@gmail.com",
+        "subject": "={{$('When chat message received').item.json.chatInput}}",
+        "message": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        176,
+        -112
+      ],
+      "id": "d6f14acf-dc50-4717-b2c0-fb423169cc71",
+      "name": "Send a message",
+      "webhookId": "05d4f175-109c-4343-8a58-8d5e45f1a9f3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "e0PvDcOvgOaJMQou",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "format": "imperial",
+        "cityName": "=Chicago"
+      },
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        80
+      ],
+      "id": "e2863657-3768-4a4d-b7fc-ed255a3a9c3d",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "oxNnZpvGahwWQaKQ",
+          "name": "DefaultWeatherToken"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeatherMap": {
+      "ai_tool": [
+        [
+          {
+            "node": "Message a model",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "35dbbe44-b130-44c5-845e-b86540f601c9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "51470e0b3b53e809237d57d08229088e7c0b6e3f917d88a74af4309f633edd73"
+  },
+  "id": "FKhMw8LH2lnaUDfc",
+  "tags": []
+}

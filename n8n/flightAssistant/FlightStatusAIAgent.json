@@ -1,0 +1,484 @@
+{
+  "name": "FlightStatusAIAgent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "*"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -592,
+        -32
+      ],
+      "id": "6a0bfe56-87ad-42a7-86c2-d890b5b5097d",
+      "name": "Telegram Trigger",
+      "webhookId": "fdd684f3-ba0e-4e63-bc11-dd2ec37d1737",
+      "credentials": {
+        "telegramApi": {
+          "id": "6fGoPY02TvyUb8IL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "a4c02a66-5a68-49d2-af40-37fcb848b329"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3034bb51-a2af-455d-a252-aaef69c03976",
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -384,
+        -32
+      ],
+      "id": "151dcb9a-66ab-4187-a978-d93a110ddd8c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b88958d6-e271-464d-b7cb-c96e20c02bd9",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "d9db8582-d237-4565-92e1-632d1cdb955e",
+              "name": "chatid",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        -128
+      ],
+      "id": "1d1b4bf5-f0bd-4c12-b34c-7fcc01e1da64",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        64
+      ],
+      "id": "89076e21-4954-4cb6-a63e-60d0028d2980",
+      "name": "Get a file",
+      "webhookId": "7ab48de6-097a-45e4-9d80-7cc141959984",
+      "credentials": {
+        "telegramApi": {
+          "id": "6fGoPY02TvyUb8IL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        32,
+        64
+      ],
+      "id": "29a031c9-74af-4eb8-b9be-3b22d8ec4a02",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "E6WIeKvjEv2Mw0cn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "You are an AI agent dedicated to assisting users with flight-related inquiries. Your core function is to retrieve and explain the latest flight status using the GetStatus tool, which requires the airline name and flight date.\n\n🧭 Interaction Guidelines\n- Start with a warm, professional greeting\nSet a friendly tone that invites conversation and builds trust.\n- Use a conversational style throughout\nWhen discussing flight status or technical details, keep the tone clear, engaging, and easy to follow.\n- Responding to direct flight queries\n- If the user provides a flight number or asks a technical question about a specific flight:\n- Extract and send only the flight ticker to the GetStatus tool.\n- Present the flight status and insights in a natural, conversational format.\n- Explaining delays and disruptions\n- Offer clear, thorough explanations of delay-related topics.\n- Break down complex aviation terms into simple, user-friendly language.\n- Avoid predictions or speculative advice\n- Focus on delivering factual, current information.\n- Do not suggest actions or alternatives.\n\n🛠 Tool Reference\n- GetStatus: Retrieves real-time flight status using airline_name and flight_date.\n\n📋 Operating Procedure\n- Engage professionally\nMaintain a helpful and approachable demeanor throughout the interaction.\n- Retrieve flight status\n- When technical analysis is requested, send airline_name and flight_date to the GetStatus tool.\n- Clarify delay-related topics\n- Translate technical delay information into accessible, user-friendly explanations.\n- Avoid recommendations\n- Provide insights without suggesting specific actions or alternatives.\n- Confirm user understanding\n- Ask clarifying questions to ensure the user’s needs are fully addressed.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        240,
+        64
+      ],
+      "id": "03bf9054-f9df-458c-9cf2-60bf0c9f2ac7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        112,
+        272
+      ],
+      "id": "befd955f-c15d-4743-9227-087ccf60b77f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "E6WIeKvjEv2Mw0cn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "1096671384"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        272
+      ],
+      "id": "93c3f6a6-3881-4538-83ba-ba6e96d7d320",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "description": "Call this tool to get an status of a requested flight. The URL that is output from this tool must be returned in markdown format. For example, ![](url)\n\nIt'll be obligatory to pass ticker and chart style. Both can be specified by user. If chart style is not specified by user, use \"candle\" as default. Possible options for style: [bar, candle, line, area, heikinAshi, hollowCandle, baseline, hiLo, column]",
+        "workflowId": {
+          "__rl": true,
+          "value": "a2HEETzwX1I85vm3",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/a2HEETzwX1I85vm3",
+          "cachedResultName": "FlightStatusV2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticker": "={{ (() => {\n  const input = $fromAI('text', 'string');\n  const airlineMatch = input.match(/Airlines_name\\s*=\\s*(.+)/);\n  return airlineMatch ? airlineMatch[1].trim() : '';\n})() }}\n\n",
+            "date": "={{ (() => {\n  const input = $fromAI('text', 'string');\n  const match = input.match(/flight_date\\s*=\\s*(.+)/);\n  return match ? match[1].trim() : '';\n})() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ticker",
+              "displayName": "ticker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        288
+      ],
+      "id": "2bc892ed-fc20-4fd3-8f48-ad19a42d9d08",
+      "name": "GetStatus"
+    },
+    {
+      "parameters": {
+        "chatId": "1096671384",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        64
+      ],
+      "id": "a974100e-9b94-4045-b0e5-a4ad2ddb745d",
+      "name": "Send a text message",
+      "webhookId": "67b930a3-55aa-4dda-9f4b-96a3d4cea4df",
+      "credentials": {
+        "telegramApi": {
+          "id": "6fGoPY02TvyUb8IL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use the tool when the user asks to save ticker for future status report",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appP3aakwPH9tM48f",
+          "mode": "list",
+          "cachedResultName": "FlightStatus",
+          "cachedResultUrl": "https://airtable.com/appP3aakwPH9tM48f"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHBdx1JKO3miRVl",
+          "mode": "list",
+          "cachedResultName": "Flights",
+          "cachedResultUrl": "https://airtable.com/appP3aakwPH9tM48f/tblHBdx1JKO3miRVl"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "FlightName": "={{ $fromAI('ticker')  }}"
+          },
+          "matchingColumns": [
+            "FlightName"
+          ],
+          "schema": [
+            {
+              "id": "FlightName",
+              "displayName": "FlightName",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        544,
+        288
+      ],
+      "id": "f341d062-94ff-44e5-9222-23cf377b8507",
+      "name": "Create a record in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "A6VxEH9x1UH6AkYa",
+          "name": "Airtable Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetStatus": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a97b58ea-b372-424e-9959-c2794634098a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f78a8dabb88fda04965214e50531d71dd8df55eb877409d18fe5519d28063763"
+  },
+  "id": "do7EgnRXtjro4d1a",
+  "tags": []
+}
