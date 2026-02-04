@@ -1,29 +1,58 @@
-name: Generate PR Description and Code Review By Lalita AI Agent
+name: AI PR Agent
 
 on:
+  push:
+    branches-ignore:
+      - main
+      - master
   pull_request:
-    types: [opened, labeled] # Triggers on PR open or label event
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-agent-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  generate-pr-description:
+  ai-pr-agent:
     runs-on: ubuntu-latest
-    # Add a condition if you want it to run only on a specific trigger, e.g., a label
-    # if: github.event.label.name == 'ai-description' 
+
+    env:
+      PR_TRIGGER_PHRASE: "PR Create"
+      BASE_BRANCH: ""
+      OAI_MODEL: "gpt-4o-mini"
+      MAX_DIFF_CHARS: "20000"
+      ENABLE_REVIEW: "true"
+      ENABLE_DESCRIPTION: "true"
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: pip install openai PyGithub # Install necessary Python libraries
+      - name: Install dependencies
+        run: |
+          pip install "PyGithub>=2.3.0" "openai>=1.6.0"
 
-    - name: Generate and Update PR Description
-      run: python scripts/pr_description_code_review.py
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PR_TOKEN: ${{ secrets.PR_TOKEN }} # Use the default token
-        PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Run AI PR Agent
+        env:
+          PR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          OAI_MODEL: ${{ env.OAI_MODEL }}
+          MAX_DIFF_CHARS: ${{ env.MAX_DIFF_CHARS }}
+          ENABLE_REVIEW: ${{ env.ENABLE_REVIEW }}
+          ENABLE_DESCRIPTION: ${{ env.ENABLE_DESCRIPTION }}
+          PR_TRIGGER_PHRASE: ${{ env.PR_TRIGGER_PHRASE }}
+          BASE_BRANCH: ${{ env.BASE_BRANCH }}
+        run: |
+          python .github/scripts/ai_pr_agent.py
