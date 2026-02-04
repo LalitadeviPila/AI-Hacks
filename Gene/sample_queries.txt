@@ -1,0 +1,13 @@
+# Sample queries for Gene SQL Query System testing
+# This file contains sample SQL and natural language queries
+
+# SQL queries (start with SELECT, SHOW, etc.)
+SELECT COUNT(*) as total_workorders FROM WORKORDER
+SELECT DISTINCT ORGID FROM WORKORDER LIMIT 10
+SHOW TABLES
+
+# Natural language queries  
+How many work orders are there?
+Show me all organizations with work orders
+What tables are available in the database?
+How many sync status records per organization?
