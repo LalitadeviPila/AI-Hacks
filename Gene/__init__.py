@@ -4,16 +4,16 @@ Gene Package Initialization
 Simple SQL query system for local database operations.
 """
 
-from config import config
-from database import DatabaseManager, get_database_connection
-from query_engine import SimpleSQLEngine, create_sql_engine
+from config_local import LocalConfig, local_config
+from database_local import LocalDatabaseManager
+from query_engine import OpenAISQLEngine, create_openai_sql_engine
 
 __all__ = [
-    'config',
-    'DatabaseManager',
-    'get_database_connection', 
-    'SimpleSQLEngine',
-    'create_sql_engine'
+    'LocalConfig',
+    'local_config',
+    'LocalDatabaseManager',
+    'OpenAISQLEngine',
+    'create_openai_sql_engine'
 ]
 
 __version__ = '1.0.0'

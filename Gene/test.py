@@ -14,14 +14,14 @@ from typing import List, Optional
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-from query_engine import create_sql_engine
-from database import DatabaseManager
+from query_engine import create_openai_sql_engine
+from database_local import LocalDatabaseManager
 
 
 def test_database_connection():
     """Test database connection."""
     print("1. Testing database connection...")
-    db_manager = DatabaseManager()
+    db_manager = LocalDatabaseManager()
     with db_manager:
         tables = db_manager.get_table_info()
         print(f"✅ Connected! Found {len(tables)} tables")
@@ -30,9 +30,9 @@ def test_database_connection():
 
 def test_engine_creation():
     """Test SQL engine creation."""
-    print("\n2. Creating SQL engine...")
-    engine = create_sql_engine()
-    print("✅ SQL engine created successfully")
+    print("\n2. Creating OpenAI SQL engine...")
+    engine = create_openai_sql_engine()
+    print("✅ OpenAI SQL engine created successfully")
     return engine
 
 

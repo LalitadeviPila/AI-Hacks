@@ -2,7 +2,7 @@
 OpenAI SQL Query Engine for Gene System
 
 Converts natural language to SQL queries and executes them against MySQL database
-using direct OpenAI API calls instead of Deere AI Gateway.
+using direct OpenAI API calls.
 """
 
 import os
@@ -10,8 +10,8 @@ import sys
 import json
 import requests
 from typing import Dict, Any, List, Optional
-from config import config
-from database import DatabaseManager
+from config_local import LocalConfig
+from database_local import LocalDatabaseManager
 
 
 class OpenAISQLEngine:
@@ -26,11 +26,20 @@ class OpenAISQLEngine:
             model (str): OpenAI model to use (default: gpt-4).
             use_ai (bool): Whether to use AI for query generation.
         """
-        self.db_manager = DatabaseManager()
+        self.db_manager = LocalDatabaseManager()
         self.use_ai = use_ai
         
-        # Setup OpenAI configuration
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+        # Setup OpenAI configuration - prioritize config file over environment
+        local_config = LocalConfig()
+        
+        # Priority: explicit parameter > config file > environment variable
+        if api_key:
+            self.api_key = api_key
+        elif local_config.OPENAI_API_KEY:
+            self.api_key = local_config.OPENAI_API_KEY
+        else:
+            self.api_key = os.getenv('OPENAI_API_KEY')
+            
         self.model = model
         self.api_url = "https://api.openai.com/v1/chat/completions"
         

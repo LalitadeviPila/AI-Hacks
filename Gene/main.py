@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Gene SQL Query System - Main Script
+OpenAI Gene SQL Query System - Main Script
 
-Simple command-line interface for natural language SQL queries.
+Simple command-line interface for natural language SQL queries using direct OpenAI API.
 """
 
 import sys
@@ -12,15 +12,16 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-from query_engine import create_sql_engine
-from database import DatabaseManager
+from query_engine import create_openai_sql_engine
+from database_local import LocalDatabaseManager
 
 
 def check_database_connection():
+    """Check database connectivity."""
     print("Checking database connection...")
     
     try:
-        db_manager = DatabaseManager()
+        db_manager = LocalDatabaseManager()
         with db_manager:
             tables = db_manager.get_table_info()
             print(f"Connected to database successfully!")
@@ -31,23 +32,51 @@ def check_database_connection():
         return False
 
 
+def check_openai_setup():
+    print("Checking OpenAI API setup...")
+    
+    try:
+        from config_local import LocalConfig
+        config = LocalConfig()
+        
+        if config.OPENAI_API_KEY:
+            print("OpenAI API key found")
+            return True
+        else:
+            print("⚠️ OpenAI API key not configured")
+            print("💡 Update OPENAI_API_KEY in config_local.py")
+            return False
+    except Exception as e:
+        print(f"❌ Error checking config: {e}")
+        return False
+
+
 def run_interactive_mode():
-    """Run interactive query mode."""
-    print("Gene SQL Query System - Interactive Mode")
-    print("=" * 50)
+    print("OpenAI Gene SQL Query System - Interactive Mode")
+    print("=" * 60)
     print("Type your questions in natural language, or:")
     print("  'tables' - List all tables")
     print("  'preview <table>' - Show table preview") 
     print("  'sql <query>' - Execute SQL directly")
     print("  'quit' - Exit")
-    print("-" * 50)
+    print("-" * 60)
     
-    # Create SQL engine
-    engine = create_sql_engine()
+    # Check OpenAI setup
+    if not check_openai_setup():
+        print("❌ OpenAI setup incomplete. Exiting.")
+        return
+    
+    # Create OpenAI SQL engine
+    try:
+        engine = create_openai_sql_engine()
+        print("OpenAI engine initialized")
+    except Exception as e:
+        print(f"❌ Failed to initialize OpenAI engine: {e}")
+        return
     
     while True:
         try:
-            user_input = input("\nAsk me: ").strip()
+            user_input = input("\n🤖 Ask me (OpenAI): ").strip()
             
             if not user_input:
                 continue
@@ -60,33 +89,26 @@ def run_interactive_mode():
                 # List tables
                 results = engine.list_tables()
                 if results.get("success"):
-                    print("\nAvailable Tables:")
-                    for table, columns in results["tables"].items():
-                        print(f"  {table}: {', '.join(columns)}")
+                    tables = results.get("data", [])
+                    print(f"Available tables ({len(tables)}): {', '.join(tables)}")
                 else:
-                    print(f"Error: {results.get('error')}")
+                    print(f"Error listing tables: {results.get('error')}")
             
             elif user_input.lower().startswith('preview '):
                 # Table preview
                 table_name = user_input[8:].strip()
-                if table_name:
-                    results = engine.get_table_preview(table_name)
-                    print(engine.format_results(results))
-                else:
-                    print("Please specify a table name: preview <table>")
+                results = engine.get_table_preview(table_name, limit=5)
+                print(engine.format_results(results))
             
             elif user_input.lower().startswith('sql '):
-                # Direct SQL
+                # Direct SQL query
                 sql_query = user_input[4:].strip()
-                if sql_query:
-                    results = engine.execute_sql_query(sql_query)
-                    print(engine.format_results(results))
-                else:
-                    print("Please provide a SQL query: sql <query>")
+                results = engine.execute_sql_query(sql_query)
+                print(engine.format_results(results))
             
             else:
-                # Natural language query
-                print("Processing your query...")
+                # Natural language query using OpenAI
+                print("🔄 Processing with OpenAI...")
                 results = engine.execute_natural_query(user_input, verbose=True)
                 print(engine.format_results(results))
         
@@ -98,21 +120,30 @@ def run_interactive_mode():
 
 
 def run_example_queries():
-    """Run some example queries to demonstrate functionality."""
-    print("Running Example Queries")
-    print("=" * 40)
+    print("Running Example Queries with OpenAI")
+    print("=" * 50)
     
-    engine = create_sql_engine()
+    # Check OpenAI setup
+    if not check_openai_setup():
+        print("❌ OpenAI setup incomplete. Exiting.")
+        return
+    
+    try:
+        engine = create_openai_sql_engine()
+    except Exception as e:
+        print(f"❌ Failed to initialize OpenAI engine: {e}")
+        return
     
     example_queries = [
-        "How many OPEN work ordeers are there?",
-        "Show me orgs and their recent work orders",
-        "Which org has the most work orders?"
+        "How many employees are there?",
+        "Show me employees grouped by department",
+        "Which employee has highest salary range?"
     ]
     
     for i, query in enumerate(example_queries, 1):
         print(f"\n{i}. {query}")
-        print("-" * 30)
+        print("-" * 40)
+        print("🔄 Processing with OpenAI...")
         results = engine.execute_natural_query(query, verbose=True)
         print(engine.format_results(results))
         
@@ -120,9 +151,26 @@ def run_example_queries():
             input("\nPress Enter for next example...")
 
 
+def show_help():
+    print("OpenAI Gene SQL Query System")
+    print("=" * 40)
+    print("Commands:")
+    print("  python main_openai.py                  - Interactive mode")
+    print("  python main_openai.py interactive      - Interactive mode")
+    print("  python main_openai.py check           - Check database connection")
+    print("  python main_openai.py examples        - Run example queries")
+    print("  python main_openai.py help            - Show this help")
+    print("")
+    print("Requirements:")
+    print("  - Set OPENAI_API_KEY environment variable")
+    print("  - Configure database connection in config.py")
+    print("")
+    print("Example:")
+    print("  set OPENAI_API_KEY=your_openai_api_key")
+    print("  python main_openai.py interactive")
+
 
 def main():
-    """Main entry point."""
     args = sys.argv[1:] if len(sys.argv) > 1 else ['interactive']
     
     if 'check' in args:
@@ -134,8 +182,12 @@ def main():
     elif 'interactive' in args:
         run_interactive_mode()
     
+    elif 'help' in args:
+        show_help()
+    
     else:
         print("Unknown command. Use 'help' for usage information.")
+        show_help()
 
 
 if __name__ == "__main__":
