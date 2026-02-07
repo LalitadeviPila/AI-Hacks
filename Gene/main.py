@@ -17,24 +17,23 @@ from database import DatabaseManager
 
 
 def check_database_connection():
-    """Check if we can connect to the MySQL database."""
-    print("🔧 Checking database connection...")
+    print("Checking database connection...")
     
     try:
         db_manager = DatabaseManager()
         with db_manager:
             tables = db_manager.get_table_info()
-            print(f"✅ Connected to database successfully!")
-            print(f"📋 Found {len(tables)} tables: {', '.join(list(tables.keys())[:5])}{'...' if len(tables) > 5 else ''}")
+            print(f"Connected to database successfully!")
+            print(f"Found {len(tables)} tables: {', '.join(list(tables.keys())[:5])}{'...' if len(tables) > 5 else ''}")
             return True
     except Exception as e:
-        print(f"❌ Database connection failed: {e}")
+        print(f"Database connection failed: {e}")
         return False
 
 
 def run_interactive_mode():
     """Run interactive query mode."""
-    print("🚀 Gene SQL Query System - Interactive Mode")
+    print("Gene SQL Query System - Interactive Mode")
     print("=" * 50)
     print("Type your questions in natural language, or:")
     print("  'tables' - List all tables")
@@ -48,24 +47,24 @@ def run_interactive_mode():
     
     while True:
         try:
-            user_input = input("\n💬 Ask me: ").strip()
+            user_input = input("\nAsk me: ").strip()
             
             if not user_input:
                 continue
             
             if user_input.lower() == 'quit':
-                print("👋 Goodbye!")
+                print("Goodbye!")
                 break
             
             elif user_input.lower() == 'tables':
                 # List tables
                 results = engine.list_tables()
                 if results.get("success"):
-                    print("\n📋 Available Tables:")
+                    print("\nAvailable Tables:")
                     for table, columns in results["tables"].items():
-                        print(f"  🔸 {table}: {', '.join(columns)}")
+                        print(f"  {table}: {', '.join(columns)}")
                 else:
-                    print(f"❌ Error: {results.get('error')}")
+                    print(f"Error: {results.get('error')}")
             
             elif user_input.lower().startswith('preview '):
                 # Table preview
@@ -74,7 +73,7 @@ def run_interactive_mode():
                     results = engine.get_table_preview(table_name)
                     print(engine.format_results(results))
                 else:
-                    print("❌ Please specify a table name: preview <table>")
+                    print("Please specify a table name: preview <table>")
             
             elif user_input.lower().startswith('sql '):
                 # Direct SQL
@@ -83,35 +82,32 @@ def run_interactive_mode():
                     results = engine.execute_sql_query(sql_query)
                     print(engine.format_results(results))
                 else:
-                    print("❌ Please provide a SQL query: sql <query>")
+                    print("Please provide a SQL query: sql <query>")
             
             else:
                 # Natural language query
-                print("🤖 Processing your query...")
+                print("Processing your query...")
                 results = engine.execute_natural_query(user_input, verbose=True)
                 print(engine.format_results(results))
         
         except KeyboardInterrupt:
-            print("\n\n👋 Goodbye!")
+            print("\n\nGoodbye!")
             break
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
 
 
 def run_example_queries():
     """Run some example queries to demonstrate functionality."""
-    print("📝 Running Example Queries")
+    print("Running Example Queries")
     print("=" * 40)
     
     engine = create_sql_engine()
     
     example_queries = [
-        "How many users are there?",
-        "Show me all users from USA",
-        "What products do we have in Electronics category?",
-        "Show me users and their recent orders",
-        "What's the total revenue from all orders?",
-        "Which country has the most users?"
+        "How many OPEN work ordeers are there?",
+        "Show me orgs and their recent work orders",
+        "Which org has the most work orders?"
     ]
     
     for i, query in enumerate(example_queries, 1):
@@ -124,22 +120,6 @@ def run_example_queries():
             input("\nPress Enter for next example...")
 
 
-def show_help():
-    """Show help information."""
-    print("Gene SQL Query System - Help")
-    print("=" * 40)
-    print("\nCommands:")
-    print("  python main.py check       - Check database connection")
-    print("  python main.py interactive - Interactive query mode")
-    print("  python main.py examples    - Run example queries")
-    print("  python main.py help        - Show this help")
-    print("\nFeatures:")
-    print("  • Natural language to SQL conversion")
-    print("  • Direct SQL query execution")
-    print("  • MySQL database connection")
-    print("  • Deere AI Gateway integration")
-    print("  • Table browsing and previews")
-
 
 def main():
     """Main entry point."""
@@ -150,9 +130,6 @@ def main():
     
     elif 'examples' in args:
         run_example_queries()
-    
-    elif 'help' in args:
-        show_help()
     
     elif 'interactive' in args:
         run_interactive_mode()

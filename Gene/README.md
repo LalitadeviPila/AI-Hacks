@@ -1,23 +1,24 @@
 # Gene SQL Query System
 
-A simple, lightweight SQL query system that converts natural language to SQL queries and executes them on local SQLite databases.
+A simple, lightweight SQL query system that converts natural language to SQL queries and executes them against MySQL databases using Deere AI Gateway.
 
 ## 🚀 Quick Start
 
-1. **Setup Database**:
+1. **Setup Environment**:
    ```bash
    cd Gene
-   python main.py setup
+   # Ensure you're using the project's virtual environment
+   C:/Users/ABGNBXP/mywork/isg-pro-dispatch-support-tool-agent/.venv/Scripts/python.exe
    ```
 
-2. **Start Interactive Mode**:
+2. **Test Natural Language Query**:
+   ```bash
+   python simple.py --nl "how many work orders are there by each org"
+   ```
+
+3. **Run Interactive Mode** (using main.py):
    ```bash
    python main.py interactive
-   ```
-
-3. **Run Built-in Examples**:
-   ```bash
-   python main.py examples
    ```
 
 ## 📁 Structure
@@ -25,34 +26,39 @@ A simple, lightweight SQL query system that converts natural language to SQL que
 ```
 Gene/
 ├── __init__.py          # Package initialization
-├── config.py            # Configuration and settings
-├── database.py          # Database operations
-├── query_engine.py      # SQL query engine
-├── main.py             # Main interactive script with built-in examples
+├── config.py            # Configuration and database settings
+├── database.py          # MySQL database operations
+├── query_engine.py      # SQL query engine with AI integration
+├── main.py             # Full interactive script
+├── simple.py           # Simplified test script (new)
 └── README.md           # This file
 ```
 
 ## ✨ Features
 
-- **Natural Language to SQL**: Ask questions in plain English
-- **Direct SQL Execution**: Run SQL queries directly when needed
-- **Local SQLite Database**: No external database server required
-- **Interactive Mode**: Command-line interface for real-time queries
-- **Table Management**: Browse tables and preview data
+- **Natural Language to SQL**: Ask questions in plain English using Deere AI Gateway
+- **MySQL Database Integration**: Direct connection to remote MySQL database
+- **Simplified Testing**: Easy-to-use command line interface
 - **Error Handling**: Graceful error handling and user feedback
+- **AI-Powered**: Leverages GPT-4 through Deere AI Gateway for query generation
 
 ## 💻 Usage
 
-### Interactive Mode
+### Simple Natural Language Query
+```bash
+# Test a natural language query
+python simple.py --nl "how many work orders are there by each org"
+python simple.py --nl "show me all users from California"
+python simple.py --nl "what is the average price by category"
+```
+
+### Interactive Mode (Full Features)
 ```bash
 python main.py interactive
 ```
 
 Commands in interactive mode:
 - Type any question in natural language
-- `tables` - List all available tables
-- `preview <table>` - Show preview of a table
-- `sql <query>` - Execute SQL directly
 - `quit` - Exit
 
 ### Programmatic Usage
@@ -63,57 +69,74 @@ from Gene import create_sql_engine
 engine = create_sql_engine()
 
 # Natural language query
-results = engine.execute_natural_query("How many users are there?")
-print(engine.format_results(results))
-
-# Direct SQL
-results = engine.execute_sql_query("SELECT * FROM users LIMIT 5")
+results = engine.execute_natural_query("How many work orders are there?")
 print(engine.format_results(results))
 ```
 
-### Database Setup
-```python
-from Gene import DatabaseManager
+## 🧪 Testing with simple.py
 
-# Setup database with sample data
-db_manager = DatabaseManager()
-db_manager.setup_database(with_sample_data=True)
+The simplified `simple.py` script provides easy testing for natural language queries.
+
+### Prerequisites
+
+1. **Database Connection**: Ensure your MySQL database connection is configured in [`config.py`](config/config.py)
+2. **Environment Variables**: Set up Deere AI Gateway credentials
+3. **Virtual Environment**: Use the project's virtual environment
+
+### Usage Examples
+
+**Natural Language Queries**:
+```bash
+python simple.py --nl "how many work orders are there by each org"
+python simple.py --nl "show me all open work orders"
+python simple.py --nl "what is the total count by status"
 ```
 
-## 📊 Sample Data
+### Command Line Options
 
-The system includes sample tables:
-- **users**: User information (id, name, email, age, city, country)
-- **products**: Product catalog (id, name, category, price, stock)
-- **orders**: Order records (id, user_id, product_id, quantity, order_date)
+- `--nl`: Execute a natural language query
+
+### Example Output
+
+```
+. Testing natural language query...
+   Natural language: 'how many work orders are there by each org'
+Generated SQL: SELECT ORGID, COUNT(*) AS work_order_count FROM WORKORDER GROUP BY ORGID;
+✅ Natural language query working!
+   Result: 
+ORGID           | work_order_count
+----------------------------------
+0               | 1
+1223            | 1
+2101            | 1212
+...
+Total rows: 79
+```
 
 ## 🔧 Configuration
 
-Edit `config.py` to customize:
-- OpenAI API key and model
-- Database file path
-- Other settings
+The system connects to a remote MySQL database. Ensure your [`config.py`](config/config.py) has:
+- Database connection settings
+- Deere AI Gateway configuration
+- Authentication credentials
 
 ## 📝 Example Queries
 
 Natural language queries you can try:
-- "How many users are there?"
-- "Show me users from USA"
-- "What products are in Electronics category?"
-- "Which user has the most orders?"
-- "What's the average age of users by country?"
+- "How many work orders are there by each org?"
+- "Show me all open work orders"
+- "What is the total count by status?"
+- "Which org has the most work orders?"
+- "Show me work orders from the last 30 days"
 
 ## ⚙️ Requirements
 
-Minimal requirements:
 - Python 3.7+
-- sqlite3 (built-in)
-- openai (for natural language queries)
-
-Install OpenAI package:
-```bash
-pip install openai
-```
+- mysql-connector-python
+- requests
+- python-dotenv
+- Access to Deere AI Gateway
+- MySQL database connection
 
 ## 🛠️ Advanced Usage
 
@@ -123,13 +146,7 @@ pip install openai
 engine = create_sql_engine(use_ai=False)
 
 # Only direct SQL works
-results = engine.execute_sql_query("SELECT COUNT(*) FROM users")
-```
-
-### Custom Database
-```python
-# Use custom database file
-engine = create_sql_engine(db_path="my_custom.db")
+results = engine.execute_sql_query("SELECT COUNT(*) FROM WORKORDER")
 ```
 
 ### Table Information
@@ -138,17 +155,23 @@ engine = create_sql_engine(db_path="my_custom.db")
 tables = engine.list_tables()
 
 # Preview table data
-preview = engine.get_table_preview("users", limit=10)
+preview = engine.get_table_preview("WORKORDER", limit=10)
 ```
 
 ## 🔍 Troubleshooting
 
 **Common Issues:**
 
-1. **OpenAI API Error**: Check your API key in `config.py`
-2. **Database Not Found**: Run `python main.py setup` first
-3. **Import Errors**: Make sure you're in the Gene directory
-4. **No AI Available**: Install openai package or use `use_ai=False`
+1. **AI Gateway Error**: Check your Deere AI Gateway credentials and registration ID
+2. **Database Connection Error**: Verify MySQL connection settings in [`config.py`](config/config.py)
+3. **Import Errors**: Make sure you're in the Gene directory and using the correct virtual environment
+4. **No AI Available**: Check auth_helper import and authentication setup
+
+**Debug Steps:**
+1. Test database connection first
+2. Verify AI Gateway authentication
+3. Check environment variables
+4. Use verbose mode for detailed error information
 
 ## 📄 License
 
