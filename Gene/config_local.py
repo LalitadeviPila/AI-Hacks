@@ -17,14 +17,14 @@ class LocalConfig:
     
     def __init__(self):
         # OpenAI Configuration (for OpenAI engine)
-        self.OPENAI_API_KEY = "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"
+        self.OPENAI_API_KEY = ""  # Set your OpenAI API key here or use environment variable
         self.OPENAI_MODEL = "gpt-4"  # or "gpt-3.5-turbo"
         
         # Local MySQL Database Configuration
         self.DB_HOST = "127.0.0.1"  # localhost
         self.DB_PORT = "3306"
         self.DB_USER = "newuser"
-        self.DB_PASSWORD = "Welcome1"  # Updated password
+        self.DB_PASSWORD = ""  # Updated password
         self.DB_NAME = "employee"  # Database name
         
         # Connection settings
